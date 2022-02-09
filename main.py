@@ -1,33 +1,62 @@
 # Ivanildo Araujo (Ivan)
 # COMP 490-001
+
 import unittest.result
-# comment to test workflow
+
+import sys
 import requests
 import secrets
 
 
-def get_250_televisionShows():
-    location1 = f"https://imdb-api.com/api/{secrets.secre_key}/tt7462410"
-    result = requests.get(location1)
+def get_250_televisionShows() -> list[dict]:
+    location = f"https://imdb-api.com/en/API/Top250TVs/{secrets.secrets_key}"
+    result = requests.get(location)
     if result.status_code != 200:
-        print("Help!")
-        return
+        print("Failed to get data!")
+        sys.exit(-1)
     data = result.json()
-    with open('data.txt', 'w') as f:
-        f.write(data)
+    show_list = data["items"]
+    return show_list
 
 
-def user_ratings():
-    location2 = f"https://imdb-api.com/api#UserRatings-header/{secrets.secre_key}/tt7462410"
-    results = requests.get(location2)
-    if results.status_code != 200:
-        print("Help!")
-        return
-    data = results.json()
-    with open('data.txt', 'w') as f:
-        f.write(data)
+def report_results(data_to_write: list[dict]):
+    with open("Output.txt", mode='a') as outputFile:  # open the output file for appending
+        for show in data_to_write:
+            print(show, file=outputFile)  # write each data item to file
+            print("\n", file=outputFile)
+            print("===================================================================", file=outputFile)
+
+
+def get_ratings(top_show_data: list[dict]) -> list[dict]:
+    results = []
+    api_queries = []
+    base_query = f"https://imdb-api.com/en/API/UserRatings/{secrets.secrets_key}/"
+    wheel_of_time_query = f"{base_query}tt7462410"
+    api_queries.append(wheel_of_time_query)
+    first_query = f"{base_query}{top_show_data[0]['id']}"
+    api_queries.append(first_query)
+    fifty_query = f"{base_query}{top_show_data[49]['id']}"
+    api_queries.append(fifty_query)
+    hundred_query = f"{base_query}{top_show_data[99]['id']}"
+    api_queries.append(hundred_query)
+    two_hundered = f"{base_query}{top_show_data[199]['id']}"
+    api_queries.append(two_hundered)
+    for query in api_queries:
+        response = requests.get(query)
+        if response.status_code != 200:  # if we don't get an ok response we have trouble, skip it
+            print(f"Failed to get data!")
+            continue
+        rating_data = response.json()
+        results.append(rating_data)
+    return results
+
+def main():
+    top_show = get_250_televisionShows()
+    rating_data = get_ratings(top_show)
+    report_results(top_show)
+    report_results(rating_data)
 
 
 if __name__ == '__main__':
-    get_250_televisionShows()
-    user_ratings()
+    main()
+
