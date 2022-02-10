@@ -6,6 +6,16 @@ import unittest.result
 import sys
 import requests
 import secrets
+import sqlite3
+from typing import Tuple
+def open_db(filename: str) -> Tuple[sqlite3.Connection, sqlite3.Cursor]:
+    db_connection = sqlite3.connect(filename)
+    cursor = db_connection.cursor()
+    return db_connection, cursor
+
+def close_db(connection: sqlite3.Connection):
+    connection.close()
+
 
 
 def get_250_televisionShows() -> list[dict]:
@@ -51,10 +61,14 @@ def get_ratings(top_show_data: list[dict]) -> list[dict]:
     return results
 
 def main():
-    top_show = get_250_televisionShows()
-    rating_data = get_ratings(top_show)
-    report_results(top_show)
-    report_results(rating_data)
+    conn, cursor = open_db("project1_sprint2.sqlite")
+    print(type(conn))
+    close_db(conn)
+
+    #top_show = get_250_televisionShows()
+    #rating_data = get_ratings(top_show)
+    #report_results(top_show)
+    #report_results(rating_data)
 
 
 if __name__ == '__main__':
