@@ -17,37 +17,35 @@ def setup_tables(cursor: sqlite3.Cursor):
     full_title TEXT NOT NULL,
     the_year INTEGER NOT NULL,
     crew TEXT NOT NULL,
-    imdb_rating float NOT NULL,
+    imdb_rating REAL NOT NULL,
     imdb_rating_counting INTEGER NOT NULL
     );''')
-
     cursor.execute('''CREATE TABLE IF NOT EXISTS ratings(
     imdbId INTEGER NOT NULL,
     total_raring INTEGER DEFAULT 0,
     total_rating_votes INTEGER NOT NULL,
-    10_rating_percents float NOT NULL,
-    10_rating_votes INTEGER NOT NULL,
-    9_rating_percents float NOT NULL,
-    9_rating_votes INTEGER NOT NULL,
-    8_rating_percents float NOT NULL,
-    8_rating_votes INTEGER NOT NULL,
-    7_rating_percents float NOT NULL,
-    7_rating_votes INTEGER NOT NULL,
-    6_rating_percents float NOT NULL,
-    6_rating_votes INTEGER NOT NULL,
-    5_rating_percents float NOT NULL,
-    5_rating_votes INTEGER NOT NULL,
-    4_rating_percents float NOT NULL,
-    4_rating_votes INTEGER NOT NULL,
-    3_rating_percents float NOT NULL,
-    3_rating_votes INTEGER NOT NULL,
-    2_rating_percents float NOT NULL,
-    2_rating_votes INTEGER NOT NULL,
-    1_rating_percents float NOT NULL,
-    1_rating_votes INTEGER NOT NULL,
-    FOREIGN KEY (imdbId) REFERENCES top_tv_show (imdbId) ON DELETE CASCADE ON UPDATE NO ACTION,
+    rating_10_percent REAL NOT NULL,
+    rating_10_votes INTEGER NOT NULL,
+    rating_9_percents REAL NOT NULL,
+    rating_9_votes INTEGER NOT NULL,
+    rating_8_percents REAL NOT NULL,
+    rating_8_votes INTEGER NOT NULL,
+    rating_7_percents REAL NOT NULL,
+    rating_7_votes INTEGER NOT NULL,
+    rating_6_percents REAL NOT NULL,
+    rating_6_votes INTEGER NOT NULL,
+    rating_5_percents REAL NOT NULL,
+    rating_5_votes INTEGER NOT NULL,
+    rating_4_percents REAL NOT NULL,
+    rating_4_votes INTEGER NOT NULL,
+    rating_3_percents REAL NOT NULL,
+    rating_3_votes INTEGER NOT NULL,
+    rating_2_percents REAL NOT NULL,
+    rating_2_votes INTEGER NOT NULL,
+    rating_1_percents REAL NOT NULL,
+    rating_1votes INTEGER NOT NULL,
+    FOREIGN KEY (imdbId) REFERENCES top_tv_show (imdbId) ON DELETE CASCADE ON UPDATE NO ACTION
     );''')
-
 
 def open_db(filename: str) -> Tuple[sqlite3.Connection, sqlite3.Cursor]:
     db_connection = sqlite3.connect(filename)
@@ -55,6 +53,7 @@ def open_db(filename: str) -> Tuple[sqlite3.Connection, sqlite3.Cursor]:
     return db_connection, cursor
 
 def close_db(connection: sqlite3.Connection):
+    connection.commit()
     connection.close()
 
 def get_250_televisionShows() -> list[dict]:
@@ -74,7 +73,6 @@ def report_results(data_to_write: list[dict]):
             print(show, file=outputFile)  # write each data item to file
             print("\n", file=outputFile)
             print("===================================================================", file=outputFile)
-
 
 def get_ratings(top_show_data: list[dict]) -> list[dict]:
     results = []
@@ -102,12 +100,13 @@ def get_ratings(top_show_data: list[dict]) -> list[dict]:
 def main():
     conn, cursor = open_db("project1_sprint2.sqlite")
     print(type(conn))
+    setup_tables(cursor)
     close_db(conn)
 
-    #top_show = get_250_televisionShows()
-    #rating_data = get_ratings(top_show)
-    #report_results(rating_data)
-    #report_results(top_show)
+    top_show = get_250_televisionShows()
+    rating_data = get_ratings(top_show)
+    report_results(rating_data)
+    report_results(top_show)
 
 if __name__ == '__main__':
     main()
