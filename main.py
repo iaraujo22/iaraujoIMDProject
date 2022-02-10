@@ -8,6 +8,47 @@ import requests
 import secrets
 import sqlite3
 from typing import Tuple
+
+
+def setup_tables(cursor: sqlite3.Cursor):
+    cursor.execute('''CREATE TABLE IF NOT EXISTS top_tv_show(
+    imdbId INTEGER PRIMARY KEY, 
+    title TEXT NOT NULL, 
+    full_title TEXT NOT NULL,
+    the_year INTEGER NOT NULL,
+    crew TEXT NOT NULL,
+    imdb_rating float NOT NULL,
+    imdb_rating_counting INTEGER NOT NULL
+    );''')
+
+    cursor.execute('''CREATE TABLE IF NOT EXISTS ratings(
+    imdbId INTEGER NOT NULL,
+    total_raring INTEGER DEFAULT 0,
+    total_rating_votes INTEGER NOT NULL,
+    10_rating_percents float NOT NULL,
+    10_rating_votes INTEGER NOT NULL,
+    9_rating_percents float NOT NULL,
+    9_rating_votes INTEGER NOT NULL,
+    8_rating_percents float NOT NULL,
+    8_rating_votes INTEGER NOT NULL,
+    7_rating_percents float NOT NULL,
+    7_rating_votes INTEGER NOT NULL,
+    6_rating_percents float NOT NULL,
+    6_rating_votes INTEGER NOT NULL,
+    5_rating_percents float NOT NULL,
+    5_rating_votes INTEGER NOT NULL,
+    4_rating_percents float NOT NULL,
+    4_rating_votes INTEGER NOT NULL,
+    3_rating_percents float NOT NULL,
+    3_rating_votes INTEGER NOT NULL,
+    2_rating_percents float NOT NULL,
+    2_rating_votes INTEGER NOT NULL,
+    1_rating_percents float NOT NULL,
+    1_rating_votes INTEGER NOT NULL,
+    FOREIGN KEY (imdbId) REFERENCES top_tv_show (imdbId) ON DELETE CASCADE ON UPDATE NO ACTION,
+    );''')
+
+
 def open_db(filename: str) -> Tuple[sqlite3.Connection, sqlite3.Cursor]:
     db_connection = sqlite3.connect(filename)
     cursor = db_connection.cursor()
@@ -15,8 +56,6 @@ def open_db(filename: str) -> Tuple[sqlite3.Connection, sqlite3.Cursor]:
 
 def close_db(connection: sqlite3.Connection):
     connection.close()
-
-
 
 def get_250_televisionShows() -> list[dict]:
     location = f"https://imdb-api.com/en/API/Top250TVs/{secrets.secrets_key}"
@@ -67,9 +106,8 @@ def main():
 
     #top_show = get_250_televisionShows()
     #rating_data = get_ratings(top_show)
-    #report_results(top_show)
     #report_results(rating_data)
-
+    #report_results(top_show)
 
 if __name__ == '__main__':
     main()
