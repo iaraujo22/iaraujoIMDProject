@@ -43,9 +43,27 @@ def setup_tables(cursor: sqlite3.Cursor):
     rating_2_percents REAL NOT NULL,
     rating_2_votes INTEGER NOT NULL,
     rating_1_percents REAL NOT NULL,
-    rating_1votes INTEGER NOT NULL,
+    rating_1_votes INTEGER NOT NULL,
     FOREIGN KEY (imdbId) REFERENCES top_tv_show (imdbId) ON DELETE CASCADE ON UPDATE NO ACTION
     );''')
+
+
+def populate_top_tv_show(cursor: sqlite3.Cursor):
+    tv_show = get_250_televisionShows()
+    keys = tv_show['imdbId'].tolist()
+    data_dict ={}
+    for item in keys:
+        data_dict[item] = (tv_show.loc[tv_show['imdbId'] == item]['title'].tolist()[0],
+                           tv_show.loc[tv_show['imdbId'] == item]['full_title'].tolist()[0],
+                           tv_show.loc[tv_show['imdbId'] == item]['the_year'].tolist()[0],
+                           tv_show.loc[tv_show['imdbId'] == item]['crew'].tolist()[0],
+                           tv_show.loc[tv_show['imdbId'] == item]['imdb_rating'].tolist()[0],
+                           tv_show.loc[tv_show['imdbId'] == item]['imdb_rating_counting'].tolist()[0])
+    for key in data_dict.keys():
+        cursor.execute('''INSERT INTO top_tv_shows (imdbID, title, full_title, the_year, crew, imdb_rating, imdb_rating_counting)
+                       VALUES (?,?,?,?,?,?)''', (key, data_dict[key][0], data_dict[key][1], data_dict[key][2], data_dict[key][3],
+                                                 data_dict[key][4], data_dict[key][5]))
+
 
 def open_db(filename: str) -> Tuple[sqlite3.Connection, sqlite3.Cursor]:
     db_connection = sqlite3.connect(filename)
@@ -96,6 +114,14 @@ def get_ratings(top_show_data: list[dict]) -> list[dict]:
         rating_data = response.json()
         results.append(rating_data)
     return results
+
+
+
+
+
+
+
+
 
 def main():
     conn, cursor = open_db("project1_sprint2.sqlite")
