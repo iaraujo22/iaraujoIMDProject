@@ -12,13 +12,13 @@ from typing import Tuple
 
 def setup_tables(cursor: sqlite3.Cursor):
     cursor.execute('''CREATE TABLE IF NOT EXISTS top_tv_show(
-    imdbId INTEGER PRIMARY KEY, 
+    imdbId TEXT PRIMARY KEY, 
     title TEXT NOT NULL, 
     full_title TEXT NOT NULL,
-    the_year INTEGER NOT NULL,
+    the_year TEXT NOT NULL,
     crew TEXT NOT NULL,
-    imdb_rating REAL NOT NULL,
-    imdb_rating_counting INTEGER NOT NULL
+    imdb_rating TEXT NOT NULL,
+    imdb_rating_counting TEXT NOT NULL
     );''')
     cursor.execute('''CREATE TABLE IF NOT EXISTS ratings(
     imdbId INTEGER NOT NULL,
@@ -48,22 +48,22 @@ def setup_tables(cursor: sqlite3.Cursor):
     );''')
 
 
-def populate_top_tv_show(cursor: sqlite3.Cursor):
-    tv_show = get_250_televisionShows()
-    keys = tv_show['imdbId'].tolist()
-    data_dict ={}
-    for item in keys:
-        data_dict[item] = (tv_show.loc[tv_show['imdbId'] == item]['title'].tolist()[0],
-                           tv_show.loc[tv_show['imdbId'] == item]['full_title'].tolist()[0],
-                           tv_show.loc[tv_show['imdbId'] == item]['the_year'].tolist()[0],
-                           tv_show.loc[tv_show['imdbId'] == item]['crew'].tolist()[0],
-                           tv_show.loc[tv_show['imdbId'] == item]['imdb_rating'].tolist()[0],
-                           tv_show.loc[tv_show['imdbId'] == item]['imdb_rating_counting'].tolist()[0])
-    for key in data_dict.keys():
-        cursor.execute('''INSERT INTO top_tv_shows (imdbID, title, full_title, the_year, crew, imdb_rating, imdb_rating_counting)
-                       VALUES (?,?,?,?,?,?)''', (key, data_dict[key][0], data_dict[key][1], data_dict[key][2], data_dict[key][3],
-                                                 data_dict[key][4], data_dict[key][5]))
+def populate_top_tv_show(show_list, cursor: sqlite3.Cursor):
+    for data in show_list:
+        cursor.execute('''INSERT INTO top_tv_show(imdbID, title, full_title, the_year, crew,  imdb_rating, imdb_rating_counting) 
+        VALUES (?,?,?,?,?,?,?);
+        ''', (data['id'], data['title'], data['fullTitle'], data['year'], data['crew'], data['imDbRating'], data['imDbRatingCount']))
 
+
+def populate_rating(results, cursor: sqlite3.Cursor):
+    for rate_data in results:
+        cursor.execute('''INSERT INTO rating(imdbId, total_raring, total_rating_votes, rating_10_percent, rating_10_votes, rating_9_percents, rating_9_votes, rating_8_percents,
+            rating_8_votes, rating_7_percents, rating_7_votes, rating_6_percents, rating_6_votes, rating_5_percents, rating_5_votes, rating_4_percents, rating_4_votes,
+              rating_3_percents, rating_3_votes, rating_2_percents, rating_2_votes,rating_1_percents, rating_1_votes)
+              VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);
+              ''', (rate_data['imDbId'], rate_data['totalRating'], rate_data['totalRatingVotes'], rate_data['imDbId'], rate_data['imDbId'], rate_data['imDbId'], rate_data['imDbId'], rate_data['imDbId'], rate_data['imDbId'], rate_data['imDbId'],
+                    rate_data['imDbId'], rate_data['imDbId'], rate_data['imDbId'], rate_data['imDbId'], rate_data['imDbId'], rate_data['imDbId'], rate_data['imDbId'], rate_data['imDbId'],
+                    rate_data['imDbId'], rate_data['imDbId'], rate_data['imDbId']))
 
 def open_db(filename: str) -> Tuple[sqlite3.Connection, sqlite3.Cursor]:
     db_connection = sqlite3.connect(filename)
@@ -115,18 +115,12 @@ def get_ratings(top_show_data: list[dict]) -> list[dict]:
         results.append(rating_data)
     return results
 
-
-
-
-
-
-
-
-
 def main():
     conn, cursor = open_db("project1_sprint2.sqlite")
     print(type(conn))
     setup_tables(cursor)
+    show_list = get_250_televisionShows()
+    populate_top_tv_show(show_list, cursor)
     close_db(conn)
 
     top_show = get_250_televisionShows()
