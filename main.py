@@ -10,60 +10,72 @@ import sqlite3
 from typing import Tuple
 
 
-def setup_tables(cursor: sqlite3.Cursor):
-    cursor.execute('''CREATE TABLE IF NOT EXISTS top_tv_show(
-    imdbId TEXT PRIMARY KEY, 
-    title TEXT NOT NULL, 
-    full_title TEXT NOT NULL,
-    the_year TEXT NOT NULL,
-    crew TEXT NOT NULL,
-    imdb_rating TEXT NOT NULL,
-    imdb_rating_counting TEXT NOT NULL
-    );''')
-    cursor.execute('''CREATE TABLE IF NOT EXISTS ratings(
-    imdbId INTEGER NOT NULL,
-    total_raring INTEGER DEFAULT 0,
-    total_rating_votes INTEGER NOT NULL,
-    rating_10_percent REAL NOT NULL,
-    rating_10_votes INTEGER NOT NULL,
-    rating_9_percents REAL NOT NULL,
-    rating_9_votes INTEGER NOT NULL,
-    rating_8_percents REAL NOT NULL,
-    rating_8_votes INTEGER NOT NULL,
-    rating_7_percents REAL NOT NULL,
-    rating_7_votes INTEGER NOT NULL,
-    rating_6_percents REAL NOT NULL,
-    rating_6_votes INTEGER NOT NULL,
-    rating_5_percents REAL NOT NULL,
-    rating_5_votes INTEGER NOT NULL,
-    rating_4_percents REAL NOT NULL,
-    rating_4_votes INTEGER NOT NULL,
-    rating_3_percents REAL NOT NULL,
-    rating_3_votes INTEGER NOT NULL,
-    rating_2_percents REAL NOT NULL,
-    rating_2_votes INTEGER NOT NULL,
-    rating_1_percents REAL NOT NULL,
-    rating_1_votes INTEGER NOT NULL,
-    FOREIGN KEY (imdbId) REFERENCES top_tv_show (imdbId) ON DELETE CASCADE ON UPDATE NO ACTION
-    );''')
+def setup_top250_table(cursor: sqlite3.Cursor):
+    cursor.execute('''CREATE TABLE IF NOT EXISTS top_show_data(
+    ttid TEXT PRIMARY KEY,
+    rank INTEGER DEFAULT 0,
+    title TEXT,
+    fulltitle TEXT,
+    year INTEGER,
+    image_url TEXT,
+    crew TEXT,
+    imdb_rating REAL,
+    imdb_rating_count INTEGER);''')
 
 
-def populate_top_tv_show(show_list, cursor: sqlite3.Cursor):
-    for data in show_list:
-        cursor.execute('''INSERT INTO top_tv_show(imdbID, title, full_title, the_year, crew,  imdb_rating, imdb_rating_counting) 
-        VALUES (?,?,?,?,?,?,?);
-        ''', (data['id'], data['title'], data['fullTitle'], data['year'], data['crew'], data['imDbRating'], data['imDbRatingCount']))
+def setup_ratings_table(cursor: sqlite3.Cursor):
+    cursor.execute('''CREATE TABLE IF NOT EXISTS show_ratings(
+        ratings_key INTEGER PRIMARY KEY,
+        imdb_ttcode TEXT NOT NULL,
+        title TEXT,
+        fulltitle TEXT,
+        year INTEGER,
+        total_rating INT DEFAULT 0,
+        total_votes INTEGER,
+        rating10_percent REAL,
+        rating10_votes INTEGER,
+        rating9_percent REAL,
+        rating9_votes INTEGER,
+        rating8_percent REAL,
+        rating8_votes INTEGER,
+        rating7_percent REAL,
+        rating7_votes INTEGER,
+        rating6_percent REAL,
+        rating6_votes INTEGER,
+        rating5_percent REAL,
+        rating5_votes INTEGER,
+        rating4_percent REAL,
+        rating4_votes INTEGER,
+        rating3_percent REAL,
+        rating3_votes INTEGER,
+        rating2_percent REAL,
+        rating2_votes INTEGER,
+        rating1_percent REAL,
+        rating1_votes INTEGER,
+        FOREIGN KEY (imdb_ttcode) REFERENCES top_show_data (ttid)
+        ON DELETE CASCADE ON UPDATE NO ACTION
+        );''')
 
 
-def populate_rating(results, cursor: sqlite3.Cursor):
-    for rate_data in results:
-        cursor.execute('''INSERT INTO rating(imdbId, total_raring, total_rating_votes, rating_10_percent, rating_10_votes, rating_9_percents, rating_9_votes, rating_8_percents,
-            rating_8_votes, rating_7_percents, rating_7_votes, rating_6_percents, rating_6_votes, rating_5_percents, rating_5_votes, rating_4_percents, rating_4_votes,
-              rating_3_percents, rating_3_votes, rating_2_percents, rating_2_votes,rating_1_percents, rating_1_votes)
-              VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);
-              ''', (rate_data['imDbId'], rate_data['totalRating'], rate_data['totalRatingVotes'], rate_data['imDbId'], rate_data['imDbId'], rate_data['imDbId'], rate_data['imDbId'], rate_data['imDbId'], rate_data['imDbId'], rate_data['imDbId'],
-                    rate_data['imDbId'], rate_data['imDbId'], rate_data['imDbId'], rate_data['imDbId'], rate_data['imDbId'], rate_data['imDbId'], rate_data['imDbId'], rate_data['imDbId'],
-                    rate_data['imDbId'], rate_data['imDbId'], rate_data['imDbId']))
+def populate_top_250tv_show(data_to_add: list[tuple], db_cursor: sqlite3.Cursor):
+    db_cursor.executemany("""INSERT INTO top_show_data(ttid, rank, title, fulltitle, year, image_url, crew, imdb_rating,
+        imdb_rating_count)
+        VALUES(?,?,?,?,?,?,?,?,?)""", data_to_add)
+
+def put_in_wheel_of_time(db_cursor: sqlite3.Cursor):
+    """this is just a total kludge. I need a Wheel of time Entry for the foreign key to work, so I'm just adding it"""
+    db_cursor.execute("""INSERT INTO top_show_data(ttid, rank, title, fulltitle, year, image_url, crew, imdb_rating, imdb_rating_count)
+    VALUES('tt7462410',0,'The Wheel of Time','The Wheel of Time (TV Series 2021– )',2021,'','Rosamund Pike, Daniel Henney',
+    7.2,85286)""")
+
+
+def populate_rating(data_to_add: list[tuple], db_cursor: sqlite3.Cursor):
+    db_cursor.executemany("""INSERT INTO show_ratings(imdb_ttcode, title, fulltitle, year, total_rating, total_votes,
+        rating10_percent,
+        rating10_votes, rating9_percent, rating9_votes, rating8_percent, rating8_votes, rating7_percent, rating7_votes,
+        rating6_percent, rating6_votes, rating5_percent, rating5_votes, rating4_percent, rating4_votes, rating3_percent,
+        rating3_votes, rating2_percent, rating2_votes, rating1_percent, rating1_votes)
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", data_to_add)
 
 def open_db(filename: str) -> Tuple[sqlite3.Connection, sqlite3.Cursor]:
     db_connection = sqlite3.connect(filename)
@@ -115,18 +127,80 @@ def get_ratings(top_show_data: list[dict]) -> list[dict]:
         results.append(rating_data)
     return results
 
+def prepare_top_250_data(top_show_data: list[dict]) -> list[tuple]:
+    data_for_database = []
+    for show_data in top_show_data:
+        show_values = list(show_data.values())  # dict values is now an object that is almost a list, lets make it one
+        # now we have the values, but several of them are strings and I would like them to be numbers
+        # since python 3.7 dictionaries are guaranteed to be in insertion order
+        show_values[1] = int(show_values[1])  # convert rank to int
+        show_values[4] = int(show_values[4])  # convert year to int
+        show_values[7] = float(show_values[7])  # convert rating to float
+        show_values[8] = int(show_values[8])  # convert rating count to int
+        # now covert the list of values to a tuple to easy insertion into the database
+        show_values = tuple(show_values)
+        data_for_database.append(show_values)
+    return data_for_database
+
+
+def make_zero_values() -> list[dict]:
+    '''this is a kludge to deal with the fact that one record has no ratings data'''
+    zero_rating = []
+    for rating_value in range(10, 0, -1):
+        rating = {}
+        rating['rating'] = rating_value
+        rating['percent'] = '0%'
+        rating['votes'] = 0
+        zero_rating.append(rating)
+    return zero_rating
+
+
+def _flatten_and_tuplize(ratings_entry: dict) -> tuple:
+    db_ready_list = []
+    db_ready_list.append(ratings_entry['imDbId'])
+    db_ready_list.append(ratings_entry['title'])
+    db_ready_list.append(ratings_entry['fullTitle'])
+    db_ready_list.append(int(ratings_entry['year']))
+    db_ready_list.append(int(ratings_entry['totalRating']))
+    db_ready_list.append(int(ratings_entry['totalRatingVotes']))
+    if not ratings_entry['ratings']:  # deal with #200 missing ratings
+        ratings_entry['ratings'] = make_zero_values()
+    for rating in ratings_entry['ratings']:
+        # the first data is a percent and we need to remove the % then conver it to a float
+        str_percent = rating['percent']
+        str_percent = str_percent[:-1]  # slice with all but the last character
+        db_ready_list.append(float(str_percent))
+        db_ready_list.append(int(rating['votes']))
+    return tuple(db_ready_list)
+
+
+def prepare_ratings_for_db(ratings: list[dict]) -> list[tuple]:
+    data_for_database = []
+    for ratings_entry in ratings:
+        db_redy_entry = _flatten_and_tuplize(ratings_entry)
+        data_for_database.append(db_redy_entry)
+    return data_for_database
+
+
+
+
+
 def main():
     conn, cursor = open_db("project1_sprint2.sqlite")
     print(type(conn))
-    setup_tables(cursor)
-    show_list = get_250_televisionShows()
-    populate_top_tv_show(show_list, cursor)
-    close_db(conn)
+    setup_top250_table(cursor)
+    setup_ratings_table(cursor)
 
-    top_show = get_250_televisionShows()
-    rating_data = get_ratings(top_show)
-    report_results(rating_data)
-    report_results(top_show)
+    top_show_data = get_250_televisionShows()
+    top_show_data_for_db = prepare_top_250_data(top_show_data)
+    prepare_top_250_data(top_show_data)
+    populate_top_250tv_show(top_show_data_for_db, cursor)
+    put_in_wheel_of_time(cursor)
+    ratings_data = get_ratings(top_show_data)
+    ratings_data_db = prepare_ratings_for_db(ratings_data)
+    populate_rating(ratings_data_db, cursor)
+
+    close_db(conn)
 
 if __name__ == '__main__':
     main()
