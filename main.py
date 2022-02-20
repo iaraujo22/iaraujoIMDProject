@@ -9,7 +9,6 @@ import secrets
 import sqlite3
 from typing import Tuple
 
-
 def setup_top250_table(cursor: sqlite3.Cursor):
     cursor.execute('''CREATE TABLE IF NOT EXISTS top_show_data(
     ttid TEXT PRIMARY KEY,
@@ -96,6 +95,27 @@ def get_250_televisionShows() -> list[dict]:
     show_list = data["items"]
     return show_list
 
+def get_most_popular_movies() -> list[dict]:
+    location = f"https://imdb-api.com/en/API/MostPopularMovies/{secrets.secrets_key}"
+    result = requests.get(location)
+    if result.status_code != 200:
+        print("Failed to get data!")
+        sys.exit(-1)
+    data = result.json()
+    movie_list = data["items"]
+    return movie_list
+
+def get_top_250_Movies() -> list[dict]:
+    location = f"https://imdb-api.com/en/API/Top250Movies/{secrets.secrets_key}"
+    result = requests.get(location)
+    if result.status_code != 200:
+        print("Failed to get data!")
+        sys.exit(-1)
+    data = result.json()
+    top_movie_list = data["items"]
+    return top_movie_list
+
+
 
 def report_results(data_to_write: list[dict]):
     with open("Output.txt", mode='a') as outputFile:  # open the output file for appending
@@ -181,24 +201,22 @@ def prepare_ratings_for_db(ratings: list[dict]) -> list[tuple]:
         data_for_database.append(db_redy_entry)
     return data_for_database
 
-
-
-
-
 def main():
     conn, cursor = open_db("project1_sprint2.sqlite")
     print(type(conn))
-    setup_top250_table(cursor)
-    setup_ratings_table(cursor)
+   # setup_top250_table(cursor)
+   # setup_ratings_table(cursor)
+    #top_show_data = get_250_televisionShows()
+    #top_show_data_for_db = prepare_top_250_data(top_show_data)
+   # prepare_top_250_data(top_show_data)
+    #populate_top_250tv_show(top_show_data_for_db, cursor)
+    #put_in_wheel_of_time(cursor)
+   # ratings_data = get_ratings(top_show_data)
+   # ratings_data_db = prepare_ratings_for_db(ratings_data)
+    #populate_rating(ratings_data_db, cursor)
 
-    top_show_data = get_250_televisionShows()
-    top_show_data_for_db = prepare_top_250_data(top_show_data)
-    prepare_top_250_data(top_show_data)
-    populate_top_250tv_show(top_show_data_for_db, cursor)
-    put_in_wheel_of_time(cursor)
-    ratings_data = get_ratings(top_show_data)
-    ratings_data_db = prepare_ratings_for_db(ratings_data)
-    populate_rating(ratings_data_db, cursor)
+    Most_Popular_Movies = get_most_popular_movies()
+    report_results(Most_Popular_Movies)
 
     close_db(conn)
 
