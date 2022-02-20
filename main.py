@@ -78,7 +78,7 @@ def get_ratings(top_show_data: list[dict]) -> list[dict]:
         results.append(rating_data)
     return results
 
-def prepare_top_250_data(top_show_data: list[dict]) -> list[tuple]:
+def prepare_data(top_show_data: list[dict]) -> list[tuple]:
     data_for_database = []
     for show_data in top_show_data:
         show_values = list(show_data.values())  # dict values is now an object that is almost a list, lets make it one
@@ -93,6 +93,23 @@ def prepare_top_250_data(top_show_data: list[dict]) -> list[tuple]:
         data_for_database.append(show_values)
     return data_for_database
 
+def prepare_data_for_most_popular_movies(most_Popular_Movies: list[dict]) -> list[tuple]:
+    data_for_database = []
+    for show_data in most_Popular_Movies:
+        show_values = list(show_data.values())  # dict values is now an object that is almost a list, lets make it one
+        # now we have the values, but several of them are strings and I would like them to be numbers
+        # since python 3.7 dictionaries are guaranteed to be in insertion order
+        if show_values[8] == '':
+            continue
+        show_values[1] = int(show_values[1])  # convert rank to int
+        show_values[2] = float(show_values[2])  # convert rankUpDown to int
+        show_values[5] = int(show_values[5])  # convert year to int
+        show_values[8] = float(show_values[8])  # convert rating to float
+        show_values[9] = int(show_values[9])  # convert rating count to int
+        # now covert the list of values to a tuple to easy insertion into the database
+        show_values = tuple(show_values)
+        data_for_database.append(show_values)
+    return data_for_database
 
 def make_zero_values() -> list[dict]:
     '''this is a kludge to deal with the fact that one record has no ratings data'''
@@ -104,7 +121,6 @@ def make_zero_values() -> list[dict]:
         rating['votes'] = 0
         zero_rating.append(rating)
     return zero_rating
-
 
 def _flatten_and_tuplize(ratings_entry: dict) -> tuple:
     db_ready_list = []
@@ -131,9 +147,6 @@ def prepare_ratings_for_db(ratings: list[dict]) -> list[tuple]:
         db_redy_entry = _flatten_and_tuplize(ratings_entry)
         data_for_database.append(db_redy_entry)
     return data_for_database
-
-
-
 
 def setup_top250_table(cursor: sqlite3.Cursor):
     cursor.execute('''CREATE TABLE IF NOT EXISTS top_show_data(
@@ -185,6 +198,7 @@ def setup_most_popular_movie_table(cursor: sqlite3.Cursor):
     cursor.execute('''CREATE TABLE IF NOT EXISTS most_popular_movie(
     ttid TEXT PRIMARY KEY,
     rank INTEGER DEFAULT 0,
+    rankUpDown INTEGER DEFAULT 0,
     title TEXT,
     fulltitle TEXT,
     year INTEGER,
@@ -228,12 +242,12 @@ def populate_rating(data_to_add: list[tuple], db_cursor: sqlite3.Cursor):
         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", data_to_add)
 
 
-def populate_top_250tv_show(data_to_add: list[tuple], db_cursor: sqlite3.Cursor):
-    db_cursor.executemany("""INSERT INTO most_popular_movie(ttid, rank, title, fulltitle, year, image_url, crew, imdb_rating,
+def populate_most_popular_Movie_table(data_to_add: list[tuple], db_cursor: sqlite3.Cursor):
+    db_cursor.executemany("""INSERT INTO most_popular_movie(ttid, rank, rankUpDown, title, fulltitle, year, image_url, crew, imdb_rating,
         imdb_rating_count)
-        VALUES(?,?,?,?,?,?,?,?,?)""", data_to_add)
+        VALUES(?,?,?,?,?,?,?,?,?,?)""", data_to_add)
 
-def populate_top_250tv_show(data_to_add: list[tuple], db_cursor: sqlite3.Cursor):
+def populate_top250_movie_table(data_to_add: list[tuple], db_cursor: sqlite3.Cursor):
     db_cursor.executemany("""INSERT INTO top_250_movie(ttid, rank, title, fulltitle, year, image_url, crew, imdb_rating,
         imdb_rating_count)
         VALUES(?,?,?,?,?,?,?,?,?)""", data_to_add)
@@ -241,20 +255,26 @@ def populate_top_250tv_show(data_to_add: list[tuple], db_cursor: sqlite3.Cursor)
 def main():
     conn, cursor = open_db("project1_sprint2.sqlite")
     print(type(conn))
-   # setup_top250_table(cursor)
-   # setup_ratings_table(cursor)
-    #top_show_data = get_250_televisionShows()
-    #top_show_data_for_db = prepare_top_250_data(top_show_data)
-   # prepare_top_250_data(top_show_data)
-    #populate_top_250tv_show(top_show_data_for_db, cursor)
-    #put_in_wheel_of_time(cursor)
-   # ratings_data = get_ratings(top_show_data)
-   # ratings_data_db = prepare_ratings_for_db(ratings_data)
-    #populate_rating(ratings_data_db, cursor)
-
-    Most_Popular_Movies = get_most_popular_movies()
-    report_results(Most_Popular_Movies)
-
+    setup_top250_table(cursor)
+    setup_ratings_table(cursor)
+    setup_top250movie_table(cursor)
+    setup_most_popular_movie_table(cursor)
+    most_Popular_Movies = get_most_popular_movies()
+    top_250_movies = get_top_250_Movies()
+    top_show_data = get_250_televisionShows()
+    most_Popular_Movies_for_db = prepare_data_for_most_popular_movies(most_Popular_Movies)
+    top_250_movies_for_db = prepare_data(top_250_movies)
+    top_show_data_for_db = prepare_data(top_show_data)
+    prepare_data_for_most_popular_movies(most_Popular_Movies)
+    prepare_data(top_250_movies)
+    prepare_data(top_show_data)
+    populate_top250_movie_table(top_250_movies_for_db, cursor)
+    populate_most_popular_Movie_table(most_Popular_Movies_for_db, cursor)
+    populate_top_250tv_show(top_show_data_for_db, cursor)
+    put_in_wheel_of_time(cursor)
+    ratings_data = get_ratings(top_show_data)
+    ratings_data_db = prepare_ratings_for_db(ratings_data)
+    populate_rating(ratings_data_db, cursor)
     close_db(conn)
 
 if __name__ == '__main__':
