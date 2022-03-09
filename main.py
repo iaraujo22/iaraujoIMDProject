@@ -3,12 +3,17 @@
 # comment to test workflow
 
 import sqlite3
-import sys
 from typing import Tuple
+
+import Window as Window
 import requests
 import secrets
 import guiWindow
 import  pandas as pd
+from PySide6.QtWidgets import QWidget, QPushButton, QListWidget, QApplication, QListWidgetItem, QMessageBox
+import pyqtgraph as pg
+import sys
+
 
 def open_db(filename: str) -> Tuple[sqlite3.Connection, sqlite3.Cursor]:
     db_connection = sqlite3.connect(filename)
@@ -356,7 +361,9 @@ def main():
     '''
 
     app = guiWindow.QApplication(sys.argv)
-    sys.exit(app.exec_())
+    window = Window()
+    window.show()
+    sys.exit(app.exec())
 
 if __name__ == '__main__':
     main()
