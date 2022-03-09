@@ -1,1 +1,1 @@
-secrets_key = 'k_ghuf4j9q'
+secret_key = 'k_ghuf4j9q'
