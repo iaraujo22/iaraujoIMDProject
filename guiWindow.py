@@ -6,12 +6,11 @@ import sys
 class Window(QWidget):
     def __init(self):
         super().__init__()
-        '''
+
         #Database tools
         self.cursor = curs
         self.connection = conn
         #self.data = data_to_show
-        '''
 
         self.setWindowTitle("Main Menu")
         self.setGeometry(100, 100, 600, 300)

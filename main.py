@@ -329,7 +329,7 @@ def populate_most_popular_show_table(data_to_add: list[tuple], db_cursor: sqlite
         VALUES(?,?,?,?,?,?,?,?,?,?)""", data_to_add)
 
 def main():
-    '''
+
     conn, cursor = open_db("project1_sprint2.sqlite")
     print(type(conn))
     setup_Most_popular_TV_show_table(cursor)
@@ -358,7 +358,7 @@ def main():
     populate_rating(db_ready_ratings_data, cursor)
     populate_rating(big_mover_ratings, cursor)
     close_db(conn)
-    '''
+
 
     app = guiWindow.QApplication(sys.argv)
     window = Window()
